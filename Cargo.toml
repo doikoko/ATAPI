@@ -1,0 +1,23 @@
+[workspace]
+members = ["example/sectors"]
+
+[package]
+name = "atapi"
+version = "0.1.0"
+edition = "2021"
+authors = ["Daniil danilsasunov.2089@gmail.com"]
+description = "Low-level ATAPI driver in no_std environments."
+license = "MIT OR Apache-2.0"
+readme = "README.md"
+repository = "https://github.com/doikoko/ATAPI"
+keywords = ["ATAPI", "x86", "no_std", "baremetal", "osdev"]
+categories = ["embedded", "no-std", "hardware-support"]
+exclude = [
+    "/example",
+    "**/.gitignore",
+    "**/.vscode",
+    "**/*.bk",
+    "**/*.orig",
+    "**/target",
+    "**/*.lock"
+]
