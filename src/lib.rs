@@ -80,6 +80,11 @@ pub enum MasterOrSlave{
     Slave = 1 << 4,
     Master = 0
 }
+#[repr(u8)]
+pub enum LBAOrCHS{
+    LBA = 1 << 6,
+    CHS = 0,
+}
 #[derive(Clone, Copy)]
 #[repr(u16)]
 pub enum PrimaryOrSecondary{
@@ -158,10 +163,15 @@ impl ATAPI {
             }
         }
     }
-    /// you need to use this function to set status of master or slave to register
+    /// this function set uo device or head register
     #[inline(always)]
-    pub fn set_master_or_slave(&self, master_or_slave: MasterOrSlave){
-        outb(self.io_registers.device_or_head_rw_b, master_or_slave as u8);
+    pub fn set_flags(
+        &self, 
+        master_or_slave: MasterOrSlave,
+        lba_or_chs: LBAOrCHS)
+    {
+        outb(self.io_registers.device_or_head_rw_b, 
+            master_or_slave as u8 | lba_or_chs as u8);
     }
     /// you need to use this function to set status of dma of PIO transfer
     #[inline(always)]

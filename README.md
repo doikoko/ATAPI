@@ -4,7 +4,8 @@
 comfortable API for work with this protocol
 
 ## NOTE
-join my Discord Server with low-level developers, WELCOME: https://discord.gg/cwXhbFXm
+you can send your offers, ideas, meaning, chatting with other devs and so on in our Discord server:
+https://discord.gg/cwXhbFXm
 
 ## example
 
@@ -14,9 +15,6 @@ Example of work ATAPI with this crate [example/sectors](./example/sectors).
 pub fn read_pio_lba48(atapi: &ATAPI, sectors: u16, lba: u64, buffer: *mut u16) {
     unsafe {
         atapi.wait_busy();
-
-        // Device/Head: LBA mode, Master (0x40 | master_bit)
-        outb(atapi.io_registers.device_or_head_rw_b, 0x40);
 
         // high bytes
         outb(atapi.io_registers.sector_count_rw_w, (sectors >> 8) as u8);

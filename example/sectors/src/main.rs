@@ -1,17 +1,13 @@
 #![no_std]
 #![no_main]
 
-use atapi::{outb, inw, DMAOrPIO, MasterOrSlave, PrimaryOrSecondary, 
-    ATAPI, ATAPIOCommands};
+use atapi::{inw, outb, ATAPIOCommands, DMAOrPIO, LBAOrCHS, MasterOrSlave, PrimaryOrSecondary, ATAPI};
 
 // example, how you can to read sectors from cd using atapi
 // for master channel lba 48
 pub fn read_pio_lba48(atapi: &ATAPI, sectors: u16, lba: u64, buffer: *mut u16) {
     unsafe {
         atapi.wait_busy();
-
-        // Device/Head: LBA mode, Master (0x40 | master_bit)
-        outb(atapi.io_registers.device_or_head_rw_b, 0x40);
 
         // high bytes
         outb(atapi.io_registers.sector_count_rw_w, (sectors >> 8) as u8);
@@ -51,7 +47,7 @@ fn main(){
     if !atapi.is_has_device(){
         panic!("has not device");
     }
-    atapi.set_master_or_slave(MasterOrSlave::Master);
+    atapi.set_flags(MasterOrSlave::Master, LBAOrCHS::LBA);
     atapi.set_dma_or_pio(DMAOrPIO::PIO);
 
     let buffer = 0 as *mut u16;
