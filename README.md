@@ -12,11 +12,11 @@ https://discord.gg/cwXhbFXm
 Example of work ATAPI with this crate [example/sectors](./example/sectors).
 
 ```rust
-fn read_pio_lba48(atapi: &ATAPI, sectors: u8, lba: u64, mut buffer: *mut u16) {
+fn read_pio_lba48(atapi: &ATAPI, sectors: u16, lba: u64, mut buffer: *mut u16) {
     atapi.wait_drq_and_busy().expect("error while read kernel");
 
     // high bytes
-    outb(atapi.io_registers.sector_count_rw_w, sectors);
+    outb(atapi.io_registers.sector_count_rw_w, (sectors >> 8) as u8);
     outb(atapi.io_registers.lba_low_rw_w,  (lba >> 24) as u8);
     outb(atapi.io_registers.lba_mid_rw_w,  (lba >> 32) as u8);
     outb(atapi.io_registers.lba_high_rw_w, (lba >> 40) as u8);

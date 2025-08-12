@@ -3,7 +3,7 @@ members = ["example/sectors"]
 
 [package]
 name = "atapi"
-version = "0.1.2"
+version = "0.1.3"
 edition = "2021"
 authors = ["Daniil danilsasunov.2089@gmail.com"]
 description = "Low-level ATAPI driver in no_std environments."

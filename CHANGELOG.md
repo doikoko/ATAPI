@@ -23,7 +23,7 @@ pub enum LBAOrCHS{
 # edit:
 example function has been edited
 ``` rust
-fn read_pio_lba48(atapi: &ATAPI, sectors: u8, lba: u64, mut buffer: *mut u16);
+fn read_pio_lba48(atapi: &ATAPI, sectors: u16, lba: u64, mut buffer: *mut u16);
 ```
 
 ## NOTE
