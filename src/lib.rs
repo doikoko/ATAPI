@@ -3,7 +3,6 @@
 #![allow(private_interfaces)]
 
 /// function for write to port 1 byte data
-#[inline(always)]
 pub fn outb(port: u16, data: u8){
     unsafe {
         core::arch::asm!(
@@ -14,7 +13,6 @@ pub fn outb(port: u16, data: u8){
     }
 }
 /// function for write to port 1 byte data
-#[inline(always)]
 pub fn outw(port: u16, data: u16){
     unsafe {
         core::arch::asm!(
@@ -24,7 +22,6 @@ pub fn outw(port: u16, data: u16){
         )
     }
 }/// function to get 8 bit data from port
-#[inline(always)]
 pub fn inb(port: u16) -> u8{
     unsafe {
         let value: u8;
@@ -37,7 +34,6 @@ pub fn inb(port: u16) -> u8{
     }
 }
 /// function to get 16 bit data from port
-#[inline(always)]
 pub fn inw(port: u16) -> u16{
     unsafe {
         let value: u16;
@@ -143,8 +139,7 @@ pub enum ControlDeviceRegister{
     NIEN        = 1 << 1,    
 }
 impl ATAPI {
-    #[inline(always)]
-    pub fn new(base: PrimaryOrSecondary) -> Self {
+        pub fn new(base: PrimaryOrSecondary) -> Self {
         Self {
             io_registers: IORegisters {
                 data_register_rw_w: base as u16,
@@ -164,8 +159,7 @@ impl ATAPI {
         }
     }
     /// this function set uo device or head register
-    #[inline(always)]
-    pub fn set_flags(
+        pub fn set_flags(
         &self, 
         master_or_slave: MasterOrSlave,
         lba_or_chs: LBAOrCHS)
@@ -174,18 +168,15 @@ impl ATAPI {
             master_or_slave as u8 | lba_or_chs as u8);
     }
     /// you need to use this function to set status of dma of PIO transfer
-    #[inline(always)]
-    pub fn set_dma_or_pio(&self, dma_or_pio: DMAOrPIO){
+        pub fn set_dma_or_pio(&self, dma_or_pio: DMAOrPIO){
         outb(self.io_registers.error_r_or_features_w_w, dma_or_pio as u8);
     }
     /// you need to use this function after each command
-    #[inline(always)]
-    pub fn clear_cache(&self){
+        pub fn clear_cache(&self){
         outb(self.io_registers.command_w_or_status_r_b, 0xE7);
     }
     /// after this function need to clear_cache
-    #[inline(always)]
-    pub fn is_has_device(&self) -> bool {
+        pub fn is_has_device(&self) -> bool {
         outb(self.io_registers.device_or_head_rw_b, 
             if self.io_registers.data_register_rw_w == 0x1F0 {0xA0} else {0xB0});
         outb(self.io_registers.sector_count_rw_w, 0);
@@ -206,14 +197,12 @@ impl ATAPI {
     }
     /// this function must to be used before each SCSCI command
     /// and than you need to use wait_drq function
-    #[inline(always)]
-    pub fn prepare_scsi(&self) {
+        pub fn prepare_scsi(&self) {
         outb(self.io_registers.command_w_or_status_r_b, ATAOtherCommands::PacketB as u8);
     }
     /// this function wait while DRQ and BSY register is not ready
     /// you need to use this function after send prepare to SCSI command
-    #[inline(always)]
-    pub fn wait_drq_and_busy(&self) -> Option<IOStatusRegister> {
+        pub fn wait_drq_and_busy(&self) -> Option<IOStatusRegister> {
         if let Some(reg) = self.wait_busy(){
             Some(reg)
         } else {
@@ -224,8 +213,7 @@ impl ATAPI {
     /// this function wait while command byte is busy
     /// if this function return None no one error register is not set
     /// otherwise return this register 
-    #[inline(always)]
-    pub fn wait_busy(&self) -> Option<IOStatusRegister>{
+        pub fn wait_busy(&self) -> Option<IOStatusRegister>{
         while inb(self.io_registers.command_w_or_status_r_b) & IOStatusRegister::BSY as u8 != 0 {}
         let status = inb(self.io_registers.command_w_or_status_r_b);
         // if DriveFaultError ErrorIndicator not set
