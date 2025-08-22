@@ -1,9 +1,11 @@
-# [0.1.4] 17.08.2025
+# [0.1.5] 22.08.2025
 
-# remove:
+# fix:
 ``` rust
-#[inline(always)]
+pub fn is_has_device(&self) -> bool;
 ```
+in this function was huge bug, it fixed
+
 ## NOTE
 you can send your offers, ideas, meaning, chatting with other devs and so on in our Discord server:
 https://discord.gg/cwXhbFXm
