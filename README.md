@@ -1,4 +1,4 @@
-# atapi 10.08.2025
+# atapi 13.09.2026
 
 `atapi` `#![no_std]` ATAPI driver, used to bare-metal and OS dev or other drivers. It providing 
 comfortable API for work with this protocol
@@ -7,39 +7,66 @@ comfortable API for work with this protocol
 you can send your offers, ideas, meaning, chatting with other devs and so on in our Discord server:
 https://discord.gg/cwXhbFXm
 
+check "is_has_device" method. For better usage implement delay function with 1us timeout
+
 ## example
 
 Example of work ATAPI with this crate [example/sectors](./example/sectors).
 
 ```rust
-fn read_pio_lba48(atapi: &ATAPI, sectors: u16, lba: u64, mut buffer: *mut u16) {
-    atapi.wait_drq_and_busy().expect("error while read kernel");
+fn read_pio_lba_28(&self, sectors: u8, lba: usize, mut buffer: *mut u16) -> Result<(), &'static str> {
+    let count = if sectors == 0 { 256 } else { sectors as usize };
 
-    // high bytes
-    outb(atapi.io_registers.sector_count_rw_w, (sectors >> 8) as u8);
-    outb(atapi.io_registers.lba_low_rw_w,  (lba >> 24) as u8);
-    outb(atapi.io_registers.lba_mid_rw_w,  (lba >> 32) as u8);
-    outb(atapi.io_registers.lba_high_rw_w, (lba >> 40) as u8);
+    for s in 0..count {
+        let sector_lba = lba + s;
 
-    // low bytes
-    outb(atapi.io_registers.sector_count_rw_w, sectors as u8);
-    outb(atapi.io_registers.lba_low_rw_w,  lba as u8);
-    outb(atapi.io_registers.lba_mid_rw_w,  (lba >> 8) as u8);
-    outb(atapi.io_registers.lba_high_rw_w, (lba >> 16) as u8);
+        self.set_flags(MasterOrSlave::Master, LBAOrCHS::LBA);
+        self.wait_busy();
+        self.set_dma_or_pio(DMAOrPIO::PIO);
 
-    outb(atapi.io_registers.command_w_or_status_r_b, 
-        ATAPIOCommands::ReadSectorsExtW as u8);
-    
-    atapi.clear_cache();
-    for _ in 0..sectors{
-        atapi.wait_drq_and_busy().expect("error while read kernel from register");
-        
-        for _ in 0..256{
-            unsafe{ 
-                *buffer = inw(atapi.io_registers.data_register_rw_w); 
+        // set byte transfer limit in LBA mid and LBA high registers: 2048 bytes (0x0800)
+        outb(self.io_registers.lba_mid_rw_w, 0x00);
+        outb(self.io_registers.lba_high_rw_w, 0x08);
+
+        self.prepare_scsi();
+        if let Some(_) = self.wait_drq_and_busy(){
+            return Err("timeout waiting for DRQ \\ \0");
+        }
+
+        // send 12-byte SCSI READ (12) packet (6 words to data port)
+        let packet: [u8; 12] = [
+            0xA8, // SCSI READ (12) opcode
+            0x00, // flags
+            ((sector_lba >> 24) & 0xFF) as u8,
+            ((sector_lba >> 16) & 0xFF) as u8,
+            ((sector_lba >> 8) & 0xFF) as u8,
+            (sector_lba & 0xFF) as u8,
+            0x00,
+            0x00,
+            0x00,
+            1,    // 1 sector (2048 bytes)
+            0x00, // reserved
+            0x00, // control
+        ];
+
+        for chunk in 0..6 {
+            let low = packet[chunk * 2] as u16;
+            let high = (packet[chunk * 2 + 1] as u16) << 8;
+            outw(self.io_registers.data_register_rw_w, low | high);
+        }
+
+        self.prepare_scsi();
+        if let Some(_) = self.wait_drq_and_busy(){
+            return Err("timeout waiting for DRQ \\ \0");
+        }
+
+        for _ in 0..(SECTOR_SIZE / 2) {
+            unsafe {
+                *buffer = inw(self.io_registers.data_register_rw_w);
                 buffer = buffer.add(1);
-            };
+            }
         }
     }
-    atapi.wait_drq_and_busy().expect("error after read kernel");
+    Ok(())
 }
+```

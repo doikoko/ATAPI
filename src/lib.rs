@@ -2,7 +2,7 @@
 #![allow(dead_code)]
 #![allow(private_interfaces)]
 
-/// function for write to port 1 byte data
+// function for write to port 1 byte data
 pub fn outb(port: u16, data: u8){
     unsafe {
         core::arch::asm!(
@@ -12,7 +12,7 @@ pub fn outb(port: u16, data: u8){
         )
     }
 }
-/// function for write to port 1 byte data
+// function for write to port 1 byte data
 pub fn outw(port: u16, data: u16){
     unsafe {
         core::arch::asm!(
@@ -21,7 +21,7 @@ pub fn outw(port: u16, data: u16){
             in("ax") data
         )
     }
-}/// function to get 8 bit data from port
+}// function to get 8 bit data from port
 pub fn inb(port: u16) -> u8{
     unsafe {
         let value: u8;
@@ -33,7 +33,7 @@ pub fn inb(port: u16) -> u8{
         value
     }
 }
-/// function to get 16 bit data from port
+// function to get 16 bit data from port
 pub fn inw(port: u16) -> u16{
     unsafe {
         let value: u16;
@@ -46,7 +46,7 @@ pub fn inw(port: u16) -> u16{
     }
 }
 
-/// R - Read, W - Write, B - Byte, W - Word LBA48
+// R - Read, W - Write, B - Byte, W - Word LBA48
 pub struct ATAPI {
     pub io_registers: IORegisters,
     pub control_registers: ControlRegisters
@@ -73,8 +73,8 @@ pub enum DMAOrPIO{
 }
 #[repr(u8)]
 pub enum MasterOrSlave{
-    Slave = 1 << 4,
-    Master = 0
+    Slave = 0xB0,
+    Master = 0xA0
 }
 #[repr(u8)]
 pub enum LBAOrCHS{
@@ -87,10 +87,10 @@ pub enum PrimaryOrSecondary{
     Primary = 0x1F0,
     Secondary = 0x170
 }
-/// construction of ErrorRegister
-/// each field contain value matched with name
-/// EXAMPLE: AddressMarkNotFound = 1 << 0,
-/// you can match value of your register with this enum
+// construction of ErrorRegister
+// each field contain value matched with name
+// EXAMPLE: AddressMarkNotFound = 1 << 0,
+// you can match value of your register with this enum
 #[repr(u8)]
 pub enum IOErrorRegister{
     AddressMarkNotFound     = 1 << 0,
@@ -103,43 +103,43 @@ pub enum IOErrorRegister{
     BadBlockDetected        = 1 << 7
 }
 
-/// construction of StatusRegister
-/// each field contain value matched with name
-/// EXAMPLE: AddressMarkNotFound = 1 << 0,
-/// you can match value of your register with this enum
+// construction of StatusRegister
+// each field contain value matched with name
+// EXAMPLE: AddressMarkNotFound = 1 << 0,
+// you can match value of your register with this enum
 #[repr(u8)]
 pub enum IOStatusRegister{
-    /// to reset this send a new command or nuke with software reset
+    // to reset this send a new command or nuke with software reset
     ErrorIndicator          = 1 << 0,
     IndexAlwaysZero         = 1 << 1,
     CorrectedDataAlwaysZero = 1 << 2,
-    /// set when the drive has PIO data to transfer, or is ready to accept PIO data
+    // set when the drive has PIO data to transfer, or is ready to accept PIO data
     DRQ                     = 1 << 3,
-    /// overlapped mode service request
+    // overlapped mode service request
     SRV                     = 1 << 4,
     DriveFaultError         = 1 << 5,
-    /// Bit is clear when drive is spun down, or after an error. Set otherwise. 
+    // Bit is clear when drive is spun down, or after an error. Set otherwise. 
     RDY                     = 1 << 6,
-    /// Indicates the drive is preparing to send/receive data (wait for it to clear). 
-    /// In case of 'hang' (it never clears), do a software reset. 
+    // Indicates the drive is preparing to send/receive data (wait for it to clear). 
+    // In case of 'hang' (it never clears), do a software reset. 
     BSY                     = 1 << 7
 }
 #[repr(u8)]
 pub enum IODeviceOrHeadRegister{
-    /// In CHS addressing, bits 0 to 3 of the head. In LBA addressing, bits 24 to 27 of the block number
+    // In CHS addressing, bits 0 to 3 of the head. In LBA addressing, bits 24 to 27 of the block number
     AddrHigh    = 1 << 0,
-    ///  Selects the drive number
+    //  Selects the drive number
     DRV         = 1 << 4,
-    /// Uses CHS addressing if clear or LBA addressing if set
+    // Uses CHS addressing if clear or LBA addressing if set
     IsLBA       = 1 << 6,
 }
 #[repr(u8)]
 pub enum ControlDeviceRegister{
-    /// Set this to stop the current device from sending interrupts. 
+    // Set this to stop the current device from sending interrupts. 
     NIEN        = 1 << 1,    
 }
 impl ATAPI {
-        pub fn new(base: PrimaryOrSecondary) -> Self {
+    pub fn new(base: PrimaryOrSecondary) -> Self {
         Self {
             io_registers: IORegisters {
                 data_register_rw_w: base as u16,
@@ -158,8 +158,8 @@ impl ATAPI {
             }
         }
     }
-    /// this function set uo device or head register
-        pub fn set_flags(
+    // this function set uo device or head register
+    pub fn set_flags(
         &self, 
         master_or_slave: MasterOrSlave,
         lba_or_chs: LBAOrCHS)
@@ -167,67 +167,95 @@ impl ATAPI {
         outb(self.io_registers.device_or_head_rw_b, 
             master_or_slave as u8 | lba_or_chs as u8);
     }
-    /// you need to use this function to set status of dma of PIO transfer
-        pub fn set_dma_or_pio(&self, dma_or_pio: DMAOrPIO){
+    // you need to use this function to set status of dma of PIO transfer
+    pub fn set_dma_or_pio(&self, dma_or_pio: DMAOrPIO){
         outb(self.io_registers.error_r_or_features_w_w, dma_or_pio as u8);
     }
-    /// you need to use this function after each command
-        pub fn clear_cache(&self){
+    // you need to use this function after each command
+    pub fn clear_cache(&self){
         outb(self.io_registers.command_w_or_status_r_b, 0xE7);
     }
-    /// after this function need to clear_cache
-        pub fn is_has_device(&self) -> bool {
-        outb(self.io_registers.device_or_head_rw_b, 
-            if self.io_registers.data_register_rw_w == 0x1F0 {0xA0} else {0xB0});
+
+    pub fn is_has_device(&self) -> bool {
+        //bootinfo::BootInfo::get_tsc().expect("TSC is not enabled").delay(1/* us */);
+        // replace it with your delay implementation or use this for loop (not recomended)
+        for i in 0..1000{ core::hint::black_box(i); }
+
         outb(self.io_registers.sector_count_rw_w, 0);
         outb(self.io_registers.lba_low_rw_w, 0);
         outb(self.io_registers.lba_mid_rw_w, 0);
         outb(self.io_registers.lba_high_rw_w, 0);
+
         outb(self.io_registers.command_w_or_status_r_b, ATAPIOCommands::IdentifyDeviceB as u8);
-        self.wait_drq_and_busy();
-        if inb(self.io_registers.command_w_or_status_r_b) == 0 {
-            false
-        } else {
-            if let None = self.wait_busy(){
-                true
-            } else {
-                false
-            }
+
+        let status = inb(self.io_registers.command_w_or_status_r_b);
+        if status == 0x00 || status == 0xFF {
+            return false;
         }
+
+        let mut timeout = 1_000_000;
+        while timeout > 0 {
+            let s = inb(self.io_registers.command_w_or_status_r_b);
+            if s & (IOStatusRegister::BSY as u8) == 0 {
+                break;
+            }
+            timeout -= 1;
+            //bootinfo::BootInfo::get_tsc().expect("TSC is not enabled").delay(1/* us */);
+            for i in 0..1000{ core::hint::black_box(i); }
+        }
+        if timeout == 0 {
+            return false; 
+        }
+
+        let lba_mid = inb(self.io_registers.lba_mid_rw_w);
+        let lba_high = inb(self.io_registers.lba_high_rw_w);
+
+        // Return true if this device reports the ATAPI signature
+        (lba_mid == 0x14 && lba_high == 0xEB) || (lba_mid == 0x69 && lba_high == 0x96)
     }
-    /// this function must to be used before each SCSCI command
-    /// and than you need to use wait_drq function
-        pub fn prepare_scsi(&self) {
+    
+    // this function must to be used before each SCSCI command
+    // and than you need to use wait_drq_and_busy function
+    pub fn prepare_scsi(&self) {
         outb(self.io_registers.command_w_or_status_r_b, ATAOtherCommands::PacketB as u8);
     }
-    /// this function wait while DRQ and BSY register is not ready
-    /// you need to use this function after send prepare to SCSI command
-        pub fn wait_drq_and_busy(&self) -> Option<IOStatusRegister> {
-        if let Some(reg) = self.wait_busy(){
-            Some(reg)
-        } else {
-            while inb(self.io_registers.command_w_or_status_r_b) & IOStatusRegister::DRQ as u8 == 0 {}
-            None
+    // this function wait while DRQ and BSY register is not ready
+    // you need to use this function after send prepare to SCSI command
+    pub fn wait_drq_and_busy(&self) -> Option<IOStatusRegister> {
+        if let Some(err) = self.wait_busy() {
+            return Some(err);
         }
+        let status = inb(self.io_registers.command_w_or_status_r_b);
+        
+        if status & (IOStatusRegister::ErrorIndicator as u8) != 0 {
+            return Some(IOStatusRegister::ErrorIndicator);
+        }
+        if status & (IOStatusRegister::DRQ as u8) != 0 {
+            return None; // DRQ ready
+        }
+        
+        Some(IOStatusRegister::ErrorIndicator) // Timeout waiting for DRQ
     }
-    /// this function wait while command byte is busy
-    /// if this function return None no one error register is not set
-    /// otherwise return this register 
-        pub fn wait_busy(&self) -> Option<IOStatusRegister>{
+    // this function wait while command byte is busy
+    // if this function return None no one error register is not set
+    // otherwise return this register 
+    pub fn wait_busy(&self) -> Option<IOStatusRegister>{
         while inb(self.io_registers.command_w_or_status_r_b) & IOStatusRegister::BSY as u8 != 0 {}
         let status = inb(self.io_registers.command_w_or_status_r_b);
-        // if DriveFaultError ErrorIndicator not set
-        if status & IOStatusRegister::DriveFaultError as u8 != 0 {
+        if status == 0x00 || status == 0xFF {
+            return Some(IOStatusRegister::DriveFaultError);
+        }
+        if status & (IOStatusRegister::DriveFaultError as u8) != 0 {
             Some(IOStatusRegister::DriveFaultError)
-        } else if status & IOStatusRegister::ErrorIndicator as u8 != 0 {
+        } else if status & (IOStatusRegister::ErrorIndicator as u8) != 0 {
             Some(IOStatusRegister::ErrorIndicator)
         } else {
             None
         }
     }
 }
-/// List of all SCSI comamnds with repr(u8)
-/// Example: SCSCICommands::TestUnitReady as u8 -> 0x00
+// List of all SCSI comamnds with repr(u8)
+// Example: SCSCICommands::TestUnitReady as u8 -> 0x00
 #[repr(u8)]
 pub enum SCSICommands {
     TestUnitReady             	= 0x00,
@@ -280,7 +308,7 @@ pub enum SCSICommands {
     ReadCD		                = 0xBE,
     SendDiscStructure		    = 0xBF,
 }
-/// B - byte, W - word
+// B - byte, W - word
 #[repr(u8)]
 pub enum ATADMACommands{
     DataSetManagementB          = 0x06,
@@ -316,7 +344,7 @@ pub enum ATADMACommands{
     WriteBufferDMA              = 0xEB,
     IdentifyDeviceDMA           = 0xEE
 }
-/// B - byte, W - word
+// B - byte, W - word
 #[repr(u8)]
 pub enum ATAPIOCommands{
     ReadSectorsB                = 0x20,
@@ -357,7 +385,7 @@ pub enum ATAPIOCommands{
     SecurityEraseUnitB          = 0xF4,
     SecurityDisablePasswordB    = 0xF6
 }
-/// B - byte, W - word
+// B - byte, W - word
 #[repr(u8)]
 pub enum ATANoneCommands{
     NOPB                        = 0x00,
@@ -408,7 +436,7 @@ pub enum ATANoneCommands{
     ReadNativeMaxAddressB       = 0xF8,
     SetMaxAddressB              = 0xF9
 }
-/// B - byte, W - word
+// B - byte, W - word
 #[repr(u8)]
 pub enum ATAOtherCommands {
     PacketB     = 0xA0,
